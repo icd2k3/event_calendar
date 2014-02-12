@@ -54,9 +54,12 @@ button:hover, button:focus {
 #orders-content .order {
 	position: absolute;
 	background-color: rgba(0,0,0,0.5);
-	border-radius: 15px;
-	-webkit-border-radius: 15px;
-	-moz-border-radius: 15px;
+	border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-box-shadow: inset 0px 0px 7px 0px rgba(0,0,0,0.75);
+-moz-box-shadow: inset 0px 0px 7px 0px rgba(0,0,0,0.75);
+box-shadow: inset 0px 0px 7px 0px rgba(0,0,0,0.75);
 }
 #orders-content .order span {
 	background-color: #000;
@@ -66,9 +69,9 @@ button:hover, button:focus {
 	font-size: 11px;
 	text-indent: 15px;
 	padding-top: 7px;
-	border-radius: 15px 15px 0 0;
-	-webkit-border-radius: 15px 15px 0 0;
-	-moz-border-radius: 15px 15px 0 0;
+	border-radius: 10px 10px 0 0;
+	-webkit-border-radius: 10px 10px 0 0;
+	-moz-border-radius: 10px 10px 0 0;
 }
 #orders-grid .time {
 	width: 100%;

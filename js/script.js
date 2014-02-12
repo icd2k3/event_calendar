@@ -2,9 +2,9 @@
 
 var shipwire = {
 	settings: {
-		totalMinutes: 10,
-		totalOrdersRange: {min: 5, max: 14},
-		durationRange: {min: 40, max: 170}  // in seconds
+		totalMinutes     : 10,
+		totalOrdersRange : {min: 7, max: 14},   // ammount of orders
+		durationRange    : {min: 40, max: 170}  // in seconds
 	}
 };
 
@@ -12,23 +12,36 @@ var shipwire = {
 
 shipwire.helpers = (function(){
 	var convert = (function(){
-		var secondsToMinutes = function(seconds) {
-			// returns a string like 2:45
-		    var divisor = seconds % (60 * 60),
-		    	minutes = Math.floor(divisor / 60),
-		    	divisor2 = divisor % 60,
-		    	seconds = Math.ceil(divisor2);
-		    if(seconds < 10) {
-		    	seconds = '0'+seconds;
-		    }
-		    return minutes+':'+seconds;
-		};
-		return {
-			secondsToMinutes: secondsToMinutes
-		}
-	})();
+			var secondsToMinutes = function(seconds) {
+				// returns a string like 2:45
+			    var divisor  = seconds % (60 * 60),
+			    	minutes  = Math.floor(divisor / 60),
+			    	divisor2 = divisor % 60,
+			    	seconds  = Math.ceil(divisor2);
+			    if(seconds < 10) {
+			    	seconds = '0'+seconds;
+			    }
+			    return minutes+':'+seconds;
+			};
+			return {
+				secondsToMinutes: secondsToMinutes
+			}
+		})(),
+		sort = (function(){
+			var byStart = function(a, b) {
+					if(a.start < b.start) { return -1; } else { return 1; }
+				},
+				byId = function(a, b) {
+					if(a.id < b.id) { return -1; } else { return 1; }
+				};
+			return {
+				byStart: byStart,
+				byId: byId
+			}
+		})();
 	return {
-		convert: convert
+		convert: convert,
+		sort: sort
 	}
 })();
 
@@ -48,13 +61,9 @@ shipwire.order.prototype = {
 			s2 = otherOrder.start,
 			e1 = this.end,
 			e2 = otherOrder.end;
-
-		//console.log('comparing: '+this.id+' : '+otherOrder.id);
 		if((s1 <= s2 && s2 <= e1) || (s1 <= e2 && e2 <= e1) || (s2 <= s1 && s1 <= e2) || (s2 <= e1 && e1 <= e2)) {
-			//console.log('true');
 			return true;
 		} else {
-			//console.log('false');
 			return false;
 		}
 	}
@@ -91,13 +100,7 @@ shipwire.orderCollection = (function(){
 		},
 		getGroups = function(){
 			// first, sort orders by start time
-			collection.sort(function(a,b){
-				if(a.start < b.start) {
-					return -1;
-				} else {
-					return 1;
-				}
-			});
+			collection.sort(shipwire.helpers.sort.byStart);
 			// combine the orders that would overlap into array groups
 			var i, j;
 			collectionGroups = [[collection[0].id]];
@@ -105,9 +108,7 @@ shipwire.orderCollection = (function(){
 				var order = collection[i],
 					foundOverlap = false;
 
-				j = i - 1;
-
-				do {
+				for(j=i-1; j>=0; j--) {
 					var compareOrder = collection[j];
 					if(order.checkOverlap(compareOrder)) {
 						var foundOverlapInGroups = false,
@@ -119,8 +120,9 @@ shipwire.orderCollection = (function(){
 							}
 						}
 						foundOverlap = true;
+						break;
 					}
-				} while(!foundOverlap && j--);
+				}
 
 				// create new group if nothing matches
 				if(!foundOverlap) { collectionGroups.push([order.id]); }
@@ -201,12 +203,11 @@ shipwire.ordersView = new function() {
 
 	var renderOrders = function() {
 		console.log('> Orders view render');
-		var orderData = shipwire.orderCollection.get(),
-			orderHTML = '';
-		$content.empty();
+		var orderData   = shipwire.orderCollection.get(),
+			orderGroups = shipwire.orderCollection.getGroups(),
+			orderHTML   = '';
 
-		var orderGroups = shipwire.orderCollection.getGroups();
-
+		// loop through the order groups, keeping in mind there may be nested arrays of orders in the same range that don't overlap
 		for(i=0; i<orderGroups.length; i++) {
 			var group = orderGroups[i];
 			for(j=0; j<group.length; j++) {
@@ -214,31 +215,29 @@ shipwire.ordersView = new function() {
 					order;
 
 				if(orderOrSubGroup.length) {
+					// this is a sub-array of orders that don't overlap, render each
 					for(var k=0; k<orderOrSubGroup.length; k++) {
-						order = shipwire.orderCollection.getOrderById(orderOrSubGroup[k]);
+						order       = shipwire.orderCollection.getOrderById(orderOrSubGroup[k]);
 						order.width = 100/group.length;
-						order.x = order.width * j;
-						renderSingleOrder(order);
+						order.x     = order.width * j;
+
+						orderHTML += getSingleOrderTemplate(order);
 					}
 				} else {
-					order = shipwire.orderCollection.getOrderById(group[j]);
+					// this is a single order
+					order       = shipwire.orderCollection.getOrderById(group[j]);
 					order.width = 100/group.length;
-					order.x = order.width * j;
-					renderSingleOrder(order);
+					order.x     = order.width * j;
+
+					orderHTML += getSingleOrderTemplate(order);
 				}
 			}
 		}
+		$content.html(orderHTML);
 	};
 
-	var renderSingleOrder = function(order) {
-		var $order = $('<div class="order"><span>Order '+order.id+'    '+shipwire.helpers.convert.secondsToMinutes(order.start)+'-'+shipwire.helpers.convert.secondsToMinutes(order.end)+'</span></div>');
-		$order.css({
-			'top'    : order.start+'px',
-			'left'   : order.x+'%',
-			'width'  : order.width+'%',
-			'height' : order.duration+'px'
-		});
-		$content.append($order);
+	var getSingleOrderTemplate = function(order) {
+		return '<div class="order" style="top: '+order.start+'px; left: '+order.x+'%; width: '+order.width+'%; height: '+order.duration+'px;"><span>Order '+order.id+'    '+shipwire.helpers.convert.secondsToMinutes(order.start)+'-'+shipwire.helpers.convert.secondsToMinutes(order.end)+'</span></div>';
 	};
 
 	// start
