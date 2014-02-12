@@ -148,8 +148,22 @@ shipwire.orderCollection = (function(){
 					for(var k=0; k<group.length; k++) {
 						var compareOrder = group[k];
 						if(order !== compareOrder && typeof compareOrder !== 'object' && !getOrderById(order).checkOverlap(getOrderById(compareOrder))) {
-							group[j] = [order, compareOrder];
-							group.splice(k,1);
+							if(typeof group[j] === 'object') {
+								var overlaps = false;
+								for(var m=0; m<group[j].length; m++) {
+									if(getOrderById(compareOrder).checkOverlap(getOrderById(group[j][m]))) {
+										overlaps = true;
+										break;
+									}
+								}
+								if(!overlaps) {
+									group[j].push(compareOrder);
+									group.splice(k,1);
+								}
+							} else {
+								group[j] = [order, compareOrder];
+								group.splice(k,1);
+							}
 						}
 					}
 				}

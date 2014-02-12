@@ -33,6 +33,11 @@ button:hover, button:focus {
 	color: #FFF;
 }
 
+#description {
+	clear: both;
+	padding-top: 40px;
+}
+
 #orders-container {
 	width: 800px;
 	height: 100%;
