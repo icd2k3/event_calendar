@@ -1,4 +1,4 @@
-event_calendar
+Event Calendar
 ==============
 
 Shipwire.com has a small optional code puzzle on their jobs page, this is my solution to the problem.
