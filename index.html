@@ -1,0 +1,40 @@
+<!doctype html>
+<!--
+Shipwire Puzzle:
+Shipwire.com has a small, optional puzzle on their jobs page.
+This is my solution to the problem.
+-->
+<html>
+  <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title>Shipwire Puzzle - Order Processing Visualization</title>
+      <link rel="stylesheet" href="css/style.css"/>
+   </head>
+   <body>
+      <div id="container">
+         <div id="orders-container">
+            <h1>Orders</h1>
+            <button id="regenerate">Generate New Data</button>
+            <div id="orders">
+               <div id="orders-grid">
+                  <!-- this will be filled via js with a time grid -->
+               </div>
+               <div id="orders-content">
+                  <!-- this will be filled via js with the orders -->
+               </div>
+            </div>
+         </div>
+         <div id="output-container">
+            <h1>Output</h1>
+            <div id="output">
+               <ul>
+                  <!-- this will be filled via js with output data -->
+               </ul>
+            </div>
+         </div>
+      </div>
+      <script type="text/javascript" src="lib/jquery-2.1.0.min.js"></script>
+      <script type="text/javascript" src="js/script.js"></script>
+   </body>
+</html>
