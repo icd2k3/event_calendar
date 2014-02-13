@@ -3,8 +3,8 @@
 var shipwire = {
 	settings: {
 		totalMinutes     : 10,
-		totalOrdersRange : {min: 7, max: 14},   // ammount of orders
-		durationRange    : {min: 40, max: 170}  // in seconds
+		totalOrdersRange : {min: 6, max: 14},   // ammount of orders
+		durationRange    : {min: 40, max: 200}  // in seconds
 	}
 };
 
@@ -12,38 +12,37 @@ var shipwire = {
 
 shipwire.helpers = (function(){
 	var convert = (function(){
-			var secondsToMinutes = function(seconds) {
-				// returns a string like 2:45
-			    var divisor  = seconds % (60 * 60),
-			    	minutes  = Math.floor(divisor / 60),
-			    	divisor2 = divisor % 60,
-			    	seconds  = Math.ceil(divisor2);
-			    if(seconds < 10) {
-			    	seconds = '0'+seconds;
-			    }
+		var secondsToMinutes = function(seconds) {
+			var divisor  = seconds % (60 * 60),
+				minutes  = Math.floor(divisor / 60),
+				divisor2 = divisor % 60,
+				seconds  = Math.ceil(divisor2);
+			    if(seconds < 10) { seconds = '0'+seconds; }
 			    return minutes+':'+seconds;
 			};
-			return {
-				secondsToMinutes: secondsToMinutes
-			}
-		})(),
-		sort = (function(){
-			var byStart = function(a, b) {
-					if(a.start < b.start) { return -1; } else { return 1; }
-				},
-				byId = function(a, b) {
-					if(a.id < b.id) { return -1; } else { return 1; }
-				};
-			return {
-				byStart: byStart,
-				byId: byId
-			}
-		})();
+		return {
+			secondsToMinutes: secondsToMinutes
+		};
+	})();
 	return {
-		convert: convert,
-		sort: sort
-	}
+		convert: convert
+	};
 })();
+
+// ARRAY SORT //////////////
+// prototype helper for sorting arrays of objects. Usage: [{id: 2},{id: 1}].sortBy('id') = [{id: 1},{id: 2}]
+
+Array.prototype.sortBy = function(property) {
+	if(!property) { console.warn('Array.sortBy must define a property'); return; }
+	this.sort(function(a,b) {
+		if(!a.hasOwnProperty(property) || !b.hasOwnProperty(property)) {
+			console.warn('Array.sortBy property not found');
+			return;
+		}
+		if(a[property] < b[property]) { return -1; } else { return 1; }
+	});
+};
+Array.prototype.isArray = true;  // helpful in determining if a variable is a number or array (used in the grouping algorhythms)
 
 // ORDER //////////////////////////
 
@@ -71,7 +70,7 @@ shipwire.order.prototype = {
 
 // ORDER COLLECTION ///////////////////////////
 
-shipwire.orderCollection = (function(){
+shipwire.orderCollection = new function(){
 	var collection,
 		collectionGroups,
 		set = function() {
@@ -100,8 +99,10 @@ shipwire.orderCollection = (function(){
 		},
 		getGroups = function(){
 			// first, sort orders by start time
-			collection.sort(shipwire.helpers.sort.byStart);
-			// combine the orders that would overlap into array groups
+			collection.sortBy('start');
+
+			// TODO: these algorhythms can most likely be simplified and optimized more
+			// Group orders together that overlap
 			var i, j;
 			collectionGroups = [[collection[0].id]];
 			for(i=1, l=collection.length; i<l; i++) {
@@ -128,8 +129,19 @@ shipwire.orderCollection = (function(){
 				if(!foundOverlap) { collectionGroups.push([order.id]); }
 			}
 
-			// Now we have arrays of orders that will overlap, but we need to go 1 step more
-			// and figure out which orders in the order group DONT overlap and group them together. For example:
+			// The above algorhythm will produce "chains" of overlapping orders
+			// for example:
+			/*
+				-----
+				| 1 |  -----
+				-----  | 3 |
+					   |   |
+					   |   |  -----
+					   -----  | 2 |
+							  -----
+			*/
+			// However, since 1 and 2 DONT overlap, they need to be grouped together as well.
+			// The following algorhythm will group them like this:
 			/*
 				-----
 				| 1 |  -----
@@ -139,16 +151,26 @@ shipwire.orderCollection = (function(){
 				| 2 |  -----
 				-----
 			*/
-			// 1 and 2 should be in the same sub-array of the overall group
-
-			for(i=0, l=collectionGroups.length; i<l; i++) {
+			// The above group would look like: [[1, 2] 3] with 1 & 2 in the same column
+			return createSubGroups(collectionGroups);
+		},
+		createSubGroups = function(collectionGroups) {
+			for(var i=0, l=collectionGroups.length; i<l; i++) {
 				var group = collectionGroups[i];
-				for(j=0; j<group.length; j++) {
+
+				// loop through the current order group
+				for(var j=0; j<group.length; j++) {
 					var order = group[j];
+
+					// loop through the current order group again to find other orders that don't collide
 					for(var k=0; k<group.length; k++) {
 						var compareOrder = group[k];
-						if(order !== compareOrder && typeof compareOrder !== 'object' && !getOrderById(order).checkOverlap(getOrderById(compareOrder))) {
-							if(typeof group[j] === 'object') {
+
+						// don't compare the orders if they're the same, or if the compare order is already a sub-group of orders
+						// check if order and compareOrder DONT overlap
+						if(order !== compareOrder && !compareOrder.isArray && !getOrderById(order).checkOverlap(getOrderById(compareOrder))) {
+							if(group[j].isArray) {
+								// the current order is already a sub-group of orders
 								var overlaps = false;
 								for(var m=0; m<group[j].length; m++) {
 									if(getOrderById(compareOrder).checkOverlap(getOrderById(group[j][m]))) {
@@ -161,6 +183,7 @@ shipwire.orderCollection = (function(){
 									group.splice(k,1);
 								}
 							} else {
+								// create a sub-group of orders that don't overlap
 								group[j] = [order, compareOrder];
 								group.splice(k,1);
 							}
@@ -168,7 +191,7 @@ shipwire.orderCollection = (function(){
 					}
 				}
 			}
-
+			return collectionGroups;
 			// the resulting array (depending on the data) could look something like this:
 			/*
 				[
@@ -179,8 +202,6 @@ shipwire.orderCollection = (function(){
 			*/
 			// in this example, the 3 array rows are all in the same overlap zone and in the middle array
 			// 2 and 6 don't overlap (so we can stack them instead)
-
-			return collectionGroups;
 		};
 
 	// generate initial data
@@ -192,8 +213,8 @@ shipwire.orderCollection = (function(){
 		get: get,
 		getGroups: getGroups,
 		getOrderById: getOrderById
-	}
-})();
+	};
+};
 
 // ORDERS VIEW ////////////////////
 
@@ -201,10 +222,9 @@ shipwire.ordersView = new function() {
 	var $grid     = $('#orders-grid'),
 		$content  = $('#orders-content');
 
-	var init = function(){
-		console.log('> Orders view init');
+	this.init = function(){
 		renderGrid();
-		renderOrders();
+		this.renderOrders();
 	};
 
 	var renderGrid = function() {
@@ -215,10 +235,8 @@ shipwire.ordersView = new function() {
 		$grid.html(gridHTML);
 	};
 
-	var renderOrders = function() {
-		console.log('> Orders view render');
-		var orderData   = shipwire.orderCollection.get(),
-			orderGroups = shipwire.orderCollection.getGroups(),
+	this.renderOrders = function() {
+		var orderGroups = shipwire.orderCollection.getGroups(),
 			orderHTML   = '';
 
 		// loop through the order groups, keeping in mind there may be nested arrays of orders in the same range that don't overlap
@@ -251,17 +269,11 @@ shipwire.ordersView = new function() {
 	};
 
 	var getSingleOrderTemplate = function(order) {
-		return '<div class="order" style="top: '+order.start+'px; left: '+order.x+'%; width: '+order.width+'%; height: '+order.duration+'px;"><span>Order '+order.id+'    '+shipwire.helpers.convert.secondsToMinutes(order.start)+'-'+shipwire.helpers.convert.secondsToMinutes(order.end)+'</span></div>';
+		return '<div class="order color-'+((order.id % 5) + 1)+'" style="top: '+order.start+'px; left: '+order.x+'%; width: '+order.width+'%; height: '+order.duration+'px;"><span><h2>#'+order.id+'</h2>    '+shipwire.helpers.convert.secondsToMinutes(order.start)+'-'+shipwire.helpers.convert.secondsToMinutes(order.end)+'</span></div>';
 	};
 
 	// start
-	init.call(this);
-
-	// public facing methods
-	return {
-		init: init,
-		renderOrders: renderOrders
-	}
+	this.init.call(this);
 };
 
 // OUTPUT VIEW ////////////////////
@@ -270,36 +282,31 @@ shipwire.outputView = new function() {
 	var orderData,
 		$output = $('#output ul');
 
-	var init = function() {
-		renderOutput();
+	this.init = function() {
+		this.renderOutput();
 	};
 
-	var renderOutput = function() {
+	this.renderOutput = function() {
 		$output.empty();
 		var orderData = shipwire.orderCollection.get(),
 			outputHTML = '';
+
+		orderData.sortBy('id');
 		for(var i=0, l=orderData.length; i<l; i++) {
 			var order = orderData[i];
-			outputHTML += '<li>Order '+order.id+' whose processing starts at '+order.start+' and lasts '+order.duration+' seconds.'+'</li>';
+			outputHTML += '<li class="color-'+((order.id % 5) + 1)+'">Order '+order.id+' whose processing starts at '+order.start+' and lasts '+order.duration+' seconds.'+'</li>';
 		}
 		$output.html(outputHTML);
 	};
 
 	// start init
-	init();
-
-	// public facing methods
-	return {
-		init: init,
-		renderOutput: renderOutput
-	}
+	this.init();
 };
 
 // REGENERATE ////////////////////
 
 shipwire.regenerate = (function(){
 	var $button = $('button#regenerate');
-
 	$button.on('click', function() {
 		shipwire.orderCollection.set();
 		shipwire.outputView.renderOutput();

@@ -13,10 +13,12 @@ This is my solution to the problem.
    </head>
    <body>
       <div id="container">
-         <div id="orders-container">
+         <div id="orders-container" class="clearfix">
             <h1>Orders</h1>
-            <button id="regenerate">Generate New Data</button>
-            <div id="orders">
+            <div id="controls">
+               <button id="regenerate">Generate New Data</button>
+            </div>
+            <div id="orders" class="clearfix">
                <div id="orders-grid">
                   <!-- this will be filled via js with a time grid -->
                </div>
@@ -27,13 +29,13 @@ This is my solution to the problem.
          </div>
          <div id="output-container">
             <h1>Output</h1>
-            <div id="output">
+            <div id="output" class="clearfix">
                <ul>
                   <!-- this will be filled via js with output data -->
                </ul>
             </div>
          </div>
-         <div id="description">
+         <div id="description" class="clearfix">
             Event calendar code problem rules:
             <ul>
                <li>No orders can overlap</li>
