@@ -1,6 +1,6 @@
 Event Calendar
 ==============
 
-Shipwire.com has a small optional code puzzle on their jobs page, this is my solution to the problem.
+This is an example of event calendar (10min span) where events aren't allowed to overlap, and their width should fill the window.
 
 Demo: http://justin-schrader.com/stuff/calendar_puzzle/
