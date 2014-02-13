@@ -42,7 +42,7 @@ Array.prototype.sortBy = function(property) {
 		if(a[property] < b[property]) { return -1; } else { return 1; }
 	});
 };
-Array.prototype.isArray = true;  // helpful in determining if a variable is a number or array (used in the grouping algorhythms)
+Array.prototype.isArray = true;  // helpful in determining if a variable is a number or array (used in the grouping algorithms)
 
 // ORDER //////////////////////////
 
@@ -101,7 +101,7 @@ shipwire.orderCollection = new function(){
 			// first, sort orders by start time
 			collection.sortBy('start');
 
-			// TODO: these algorhythms can most likely be simplified and optimized more
+			// TODO: these algorithms can most likely be simplified and optimized more
 			// Group orders together that overlap
 			var i, j;
 			collectionGroups = [[collection[0].id]];
@@ -129,7 +129,7 @@ shipwire.orderCollection = new function(){
 				if(!foundOverlap) { collectionGroups.push([order.id]); }
 			}
 
-			// The above algorhythm will produce "chains" of overlapping orders
+			// The above algorithm will produce "chains" of overlapping orders
 			// for example:
 			/*
 				-----
@@ -141,7 +141,7 @@ shipwire.orderCollection = new function(){
 							  -----
 			*/
 			// However, since 1 and 2 DONT overlap, they need to be grouped together as well.
-			// The following algorhythm will group them like this:
+			// The following algorithm will group them like this:
 			/*
 				-----
 				| 1 |  -----
