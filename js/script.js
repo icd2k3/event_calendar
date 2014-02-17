@@ -1,6 +1,6 @@
 // NAMESPACE / SETTINGS ///////////
 
-var shipwire = {
+var eventCalendar = {
 	settings: {
 		totalMinutes     : 10,
 		totalOrdersRange : {min: 6, max: 14},   // ammount of orders
@@ -10,7 +10,7 @@ var shipwire = {
 
 // HELPERS ////////////////////////
 
-shipwire.helpers = (function(){
+eventCalendar.helpers = (function(){
 	var convert = (function(){
 		var secondsToMinutes = function(seconds) {
 			var divisor  = seconds % (60 * 60),
@@ -46,14 +46,14 @@ Array.prototype.isArray = true;  // helpful in determining if a variable is a nu
 
 // ORDER //////////////////////////
 
-shipwire.order = function(id) {
+eventCalendar.order = function(id) {
 	var rand      = Math.random();  // random seed
-	this.start    = Math.round(rand*((shipwire.settings.totalMinutes - (shipwire.settings.durationRange.max / 60)) * 60));
-	this.duration = Math.round(rand*(shipwire.settings.durationRange.max - shipwire.settings.durationRange.min))+shipwire.settings.durationRange.min;
+	this.start    = Math.round(rand*((eventCalendar.settings.totalMinutes - (eventCalendar.settings.durationRange.max / 60)) * 60));
+	this.duration = Math.round(rand*(eventCalendar.settings.durationRange.max - eventCalendar.settings.durationRange.min))+eventCalendar.settings.durationRange.min;
 	this.end      = this.start + this.duration;
 	this.id       = id;
 };
-shipwire.order.prototype = {
+eventCalendar.order.prototype = {
 	// checks if the current order overlaps time with another
 	checkOverlap: function(otherOrder) {
 		var s1 = this.start,
@@ -70,16 +70,16 @@ shipwire.order.prototype = {
 
 // ORDER COLLECTION ///////////////////////////
 
-shipwire.orderCollection = new function(){
+eventCalendar.orderCollection = new function(){
 	var collection,
 		collectionGroups,
 		set = function() {
 			// generate fake order data automatically
 			collection = [];
-			var randomTotalOrders = Math.round(Math.random()*(shipwire.settings.totalOrdersRange.max - shipwire.settings.totalOrdersRange.min))+shipwire.settings.totalOrdersRange.min;
+			var randomTotalOrders = Math.round(Math.random()*(eventCalendar.settings.totalOrdersRange.max - eventCalendar.settings.totalOrdersRange.min))+eventCalendar.settings.totalOrdersRange.min;
 			for(var i=0, l=randomTotalOrders; i<l; i++) {
 				// create an order
-				collection.push(new shipwire.order(i+1));
+				collection.push(new eventCalendar.order(i+1));
 			}
 			return collection;
 		},
@@ -218,7 +218,7 @@ shipwire.orderCollection = new function(){
 
 // ORDERS VIEW ////////////////////
 
-shipwire.ordersView = new function() {
+eventCalendar.ordersView = new function() {
 	var $grid     = $('#orders-grid'),
 		$content  = $('#orders-content');
 
@@ -229,14 +229,14 @@ shipwire.ordersView = new function() {
 
 	var renderGrid = function() {
 		var gridHTML = '';
-		for(var i=0, l=shipwire.settings.totalMinutes+1; i<l; i++) {
+		for(var i=0, l=eventCalendar.settings.totalMinutes+1; i<l; i++) {
 			gridHTML += '<div class="time"><span>'+i +' min</span></div>';
 		}
 		$grid.html(gridHTML);
 	};
 
 	this.renderOrders = function() {
-		var orderGroups = shipwire.orderCollection.getGroups(),
+		var orderGroups = eventCalendar.orderCollection.getGroups(),
 			orderHTML   = '';
 
 		// loop through the order groups, keeping in mind there may be nested arrays of orders in the same range that don't overlap
@@ -249,7 +249,7 @@ shipwire.ordersView = new function() {
 				if(orderOrSubGroup.length) {
 					// this is a sub-array of orders that don't overlap, render each
 					for(var k=0; k<orderOrSubGroup.length; k++) {
-						order       = shipwire.orderCollection.getOrderById(orderOrSubGroup[k]);
+						order       = eventCalendar.orderCollection.getOrderById(orderOrSubGroup[k]);
 						order.width = 100/group.length;
 						order.x     = order.width * j;
 
@@ -257,7 +257,7 @@ shipwire.ordersView = new function() {
 					}
 				} else {
 					// this is a single order
-					order       = shipwire.orderCollection.getOrderById(group[j]);
+					order       = eventCalendar.orderCollection.getOrderById(group[j]);
 					order.width = 100/group.length;
 					order.x     = order.width * j;
 
@@ -269,7 +269,7 @@ shipwire.ordersView = new function() {
 	};
 
 	var getSingleOrderTemplate = function(order) {
-		return '<div class="order color-'+((order.id % 5) + 1)+'" style="top: '+order.start+'px; left: '+order.x+'%; width: '+order.width+'%; height: '+order.duration+'px;"><span><h2>#'+order.id+'</h2>    '+shipwire.helpers.convert.secondsToMinutes(order.start)+'-'+shipwire.helpers.convert.secondsToMinutes(order.end)+'</span></div>';
+		return '<div class="order color-'+((order.id % 5) + 1)+'" style="top: '+order.start+'px; left: '+order.x+'%; width: '+order.width+'%; height: '+order.duration+'px;"><span><h2>#'+order.id+'</h2>    '+eventCalendar.helpers.convert.secondsToMinutes(order.start)+'-'+eventCalendar.helpers.convert.secondsToMinutes(order.end)+'</span></div>';
 	};
 
 	// start
@@ -278,7 +278,7 @@ shipwire.ordersView = new function() {
 
 // OUTPUT VIEW ////////////////////
 
-shipwire.outputView = new function() {
+eventCalendar.outputView = new function() {
 	var orderData,
 		$output = $('#output ul');
 
@@ -288,7 +288,7 @@ shipwire.outputView = new function() {
 
 	this.renderOutput = function() {
 		$output.empty();
-		var orderData = shipwire.orderCollection.get(),
+		var orderData = eventCalendar.orderCollection.get(),
 			outputHTML = '';
 
 		orderData.sortBy('id');
@@ -305,11 +305,11 @@ shipwire.outputView = new function() {
 
 // REGENERATE ////////////////////
 
-shipwire.regenerate = (function(){
+eventCalendar.regenerate = (function(){
 	var $button = $('button#regenerate');
 	$button.on('click', function() {
-		shipwire.orderCollection.set();
-		shipwire.outputView.renderOutput();
-		shipwire.ordersView.renderOrders();
+		eventCalendar.orderCollection.set();
+		eventCalendar.outputView.renderOutput();
+		eventCalendar.ordersView.renderOrders();
 	});
 })();
